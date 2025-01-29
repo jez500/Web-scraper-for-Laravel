@@ -37,17 +37,18 @@ class WebScraperApi extends AbstractWebScraper
         $request = function () {
             try {
                 $result = $this->getRequest()
-                    ->get($this->scraperApiUrl, $this->getRequestParams())
-                    ->json();
+                    ->get($this->scraperApiUrl, $this->getRequestParams());
 
-                $fullContent = data_get($result, 'fullContent', '');
+                $json = $result->json();
+
+                $fullContent = data_get($json, 'fullContent', '');
 
                 if (! $fullContent) {
                     $this->errors[] = [
                         'request_url' => $result->request?->url(),
                         'message' => 'No content found',
                         'code' => Response::HTTP_NO_CONTENT,
-                        'response' => $result,
+                        'response' => $json,
                     ];
                 }
 
