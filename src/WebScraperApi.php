@@ -78,6 +78,6 @@ class WebScraperApi extends AbstractWebScraper
 
     public function getRequestParams(): array
     {
-        return array_merge([$this->url], $this->defaultRequestParams, $this->getOptions());
+        return array_merge(['url' => $this->url], $this->defaultRequestParams, $this->getOptions());
     }
 }
