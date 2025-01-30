@@ -45,7 +45,8 @@ class WebScraperApi extends AbstractWebScraper
 
                 if (! $fullContent) {
                     $this->errors[] = [
-                        'request_url' => $result->request?->url(),
+                        'request_url' => $this->scraperApiUrl,
+                        'request_params' => $this->getRequestParams(),
                         'message' => 'No content found',
                         'code' => Response::HTTP_NO_CONTENT,
                         'response' => $json,
