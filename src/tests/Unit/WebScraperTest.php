@@ -128,7 +128,7 @@ class WebScraperTest extends TestCase
     protected function setupMocks(): void
     {
         Http::fake([
-            '*' => Http::response($this->getMockResponse()),
+            'example.com/*' => Http::response($this->getMockResponse()),
         ]);
     }
 }

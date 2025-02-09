@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WebScraperApi extends AbstractWebScraper
 {
-    protected string $scraperApiUrl = 'http://scraper:3000/api/article';
+    static string $scraperApiUrl = 'http://scraper:3000/api/article';
 
     protected array $defaultRequestParams = [
         'sleep' => 2000,
@@ -22,9 +22,14 @@ class WebScraperApi extends AbstractWebScraper
 
     public function setScraperApiBaseUrl(string $scraperApiBaseUrl): self
     {
-        $this->scraperApiUrl = trim($scraperApiBaseUrl, '/').'/api/article';
+        static::$scraperApiUrl = trim($scraperApiBaseUrl, '/').'/api/article';
 
         return $this;
+    }
+
+    public function getScraperApiBaseUrl(): string
+    {
+        return static::$scraperApiUrl;
     }
 
     public function getRequest(): PendingRequest
@@ -37,7 +42,7 @@ class WebScraperApi extends AbstractWebScraper
         $request = function () {
             try {
                 $result = $this->getRequest()
-                    ->get($this->scraperApiUrl, $this->getRequestParams());
+                    ->get($this->getScraperApiBaseUrl(), $this->getRequestParams());
 
                 $json = $result->json();
 
@@ -45,7 +50,7 @@ class WebScraperApi extends AbstractWebScraper
 
                 if (! $fullContent) {
                     $this->errors[] = [
-                        'request_url' => $this->scraperApiUrl,
+                        'request_url' => $this->getScraperApiBaseUrl(),
                         'request_params' => $this->getRequestParams(),
                         'message' => 'No content found',
                         'code' => Response::HTTP_NO_CONTENT,
