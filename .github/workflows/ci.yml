@@ -1,0 +1,25 @@
+on: [push, pull_request]
+
+name: CI
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    container:
+      image: composer:2.8.8
+
+    steps:
+      -
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      -
+        name: Install composer dependencies
+        run: |
+          composer install
+      -
+        name: Check coding standards and static analysis
+        run: composer analyse
+      -
+        name: Run Testsuite
+        run: composer test
