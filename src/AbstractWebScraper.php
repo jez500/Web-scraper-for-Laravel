@@ -148,6 +148,29 @@ abstract class AbstractWebScraper implements WebScraperInterface
         return collect($items);
     }
 
+    public function getXpath(string $xpath, string|Closure $nodeContent = 'text', array $nodeContentArgs = []): Collection
+    {
+        if (! $nodeContent instanceof Closure && ! in_array($nodeContent, ['text', 'html', 'attr'])) {
+            throw new Exception('Invalid node content type');
+        }
+
+        try {
+            $items = $this->getDom()
+                ->filterXPath($xpath)
+                ->each(function (Crawler $node) use ($nodeContent, $nodeContentArgs) {
+                    return $nodeContent instanceof Closure
+                        ? $nodeContent($node)
+                        : call_user_func_array([$node, $nodeContent], $nodeContentArgs);
+                });
+        } catch (\InvalidArgumentException $e) {
+            throw new DomSelectorException('Invalid XPath expression: '.$e->getMessage());
+        } catch (Exception $e) {
+            throw new DomSelectorException('Error processing XPath result: '.$e->getMessage());
+        }
+
+        return collect($items);
+    }
+
     public function getJson(string $path): Collection
     {
         $json = json_decode($this->body, true);

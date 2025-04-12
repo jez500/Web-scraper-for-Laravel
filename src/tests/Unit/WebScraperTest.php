@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Jez500\WebScraperForLaravel\Enums\ScraperServicesEnum;
+use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException; // Added
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
 use Jez500\WebScraperForLaravel\WebScraperHttp;
 use Jez500\WebScraperForLaravel\WebScraperInterface;
@@ -113,6 +114,63 @@ class WebScraperTest extends TestCase
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertSame('Example Domain', $result->first());
+    }
+
+    public function test_can_get_xpath()
+    {
+        $scrape = $this->getScraper()->from('https://example.com/')->get();
+        $result = $scrape->getXpath('//title');
+        $this->assertInstanceOf(Collection::class, $result);
+        $this->assertSame('Example Domain', $result->first());
+
+        $resultH1 = $scrape->getXpath('//h1');
+        $this->assertInstanceOf(Collection::class, $resultH1);
+        $this->assertSame('Example Domain', $resultH1->first());
+    }
+
+    public function test_can_get_xpath_via_callback()
+    {
+        $result = $this->getScraper()->from('https://example.com/')
+            ->get()
+            ->getXpath('//title', fn (Crawler $node) => $node->text());
+
+        $this->assertInstanceOf(Collection::class, $result);
+        $this->assertSame('Example Domain', $result->first());
+    }
+
+    public function test_can_get_xpath_attribute()
+    {
+        $result = $this->getScraper()->from('https://example.com/')
+            ->get()
+            ->getXpath('//a', 'attr', ['href']); // Get href attribute
+
+        $this->assertInstanceOf(Collection::class, $result);
+        $this->assertSame('https://www.iana.org/domains/example', $result->first());
+    }
+
+    public function test_get_xpath_throws_exception_for_invalid_expression()
+    {
+        $this->expectException(DomSelectorException::class);
+        // Adjust to expect the actual substring from the underlying DOMXPath error
+        $this->expectExceptionMessageMatches('/Invalid expression/i');
+
+        $this->getScraper()->from('https://example.com/')
+            ->get()
+            ->getXpath('//invalid['); // Malformed XPath
+    }
+
+    public function test_can_get_multiple_nodes_with_xpath()
+    {
+        // Correct XPath to select the existing paragraphs
+        $result = $this->getScraper()->from('https://example.com/')
+            ->get()
+            ->getXpath('//p');
+
+        $this->assertInstanceOf(Collection::class, $result);
+        $this->assertCount(2, $result);
+        // Assert against the actual content from http-response.html
+        $this->assertStringContainsString('This domain is for use in illustrative examples', $result->get(0));
+        $this->assertStringContainsString('More information...', $result->get(1));
     }
 
     protected function getScraper(): WebScraperInterface
