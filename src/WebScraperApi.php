@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WebScraperApi extends AbstractWebScraper
 {
-    static string $scraperApiUrl = 'http://scraper:3000/api/article';
+    public static string $scraperApiUrl = 'http://scraper:3000/api/article';
 
     protected array $defaultRequestParams = [
         'sleep' => 2000,

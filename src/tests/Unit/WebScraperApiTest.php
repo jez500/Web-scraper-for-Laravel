@@ -4,8 +4,8 @@ namespace Jez500\WebScraperForLaravel\tests\Unit;
 
 use Illuminate\Support\Facades\Http;
 use Jez500\WebScraperForLaravel\Enums\ScraperServicesEnum;
-use Jez500\WebScraperForLaravel\WebScraperApi;
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
+use Jez500\WebScraperForLaravel\WebScraperApi;
 
 class WebScraperApiTest extends WebScraperTest
 {
@@ -21,20 +21,20 @@ class WebScraperApiTest extends WebScraperTest
         $this->assertSame(data_get(json_decode(parent::getMockResponse()), 'fullContent'), $body);
     }
 
-     public function test_can_set_base_url()
-     {
-         $scraper = WebScraper::api();
-         $baseUrl = 'https://test-scraper-host';
+    public function test_can_set_base_url()
+    {
+        $scraper = WebScraper::api();
+        $baseUrl = 'https://test-scraper-host';
 
-         $scraper->setScraperApiBaseUrl($baseUrl);
+        $scraper->setScraperApiBaseUrl($baseUrl); // @phpstan-ignore-line
 
-         Http::fake([
-             'test-scraper-host/*' => Http::response('{"fullContent": "test"}', 200),
-         ]);
+        Http::fake([
+            'test-scraper-host/*' => Http::response('{"fullContent": "test"}', 200),
+        ]);
 
-         $this->assertSame($baseUrl.'/api/article', $scraper->getScraperApiBaseUrl());
-         $this->assertSame('test', $scraper->from('http://foo.bar')->get()->getBody());
-     }
+        $this->assertSame($baseUrl.'/api/article', $scraper->getScraperApiBaseUrl()); // @phpstan-ignore-line
+        $this->assertSame('test', $scraper->from('http://foo.bar')->get()->getBody());
+    }
 
     protected function setupMocks(): void
     {

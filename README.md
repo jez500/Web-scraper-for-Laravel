@@ -62,5 +62,15 @@ $title = WebScraper::api()
 composer require jez500/web-scraper-for-laravel
 ```
 
+## Contributing
+
+PRs are welcome! It's a good idea to run coding standards and tests locally before submitting a PR.
+This can be done with:
+
+```shell
+composer analyse
+composer test
+```
+
 ## Author
 [Jeremy Graham](https://github.com/jez500)
