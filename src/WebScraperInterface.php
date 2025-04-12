@@ -37,6 +37,8 @@ interface WebScraperInterface
 
     public function getSelector(string $selector, string|Closure $nodeContent = 'text', array $nodeContentArgs = []): Collection;
 
+    public function getXpath(string $xpath, string|Closure $nodeContent = 'text', array $nodeContentArgs = []): Collection;
+
     public function getJson(string $path): Collection;
 
     public function getRegex(string $regex): Collection;

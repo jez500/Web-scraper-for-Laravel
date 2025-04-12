@@ -7,6 +7,7 @@ A package to make it easier to scrape external web pages using laravel.
 * Support for scraping javascript rendered pages (Using https://github.com/amerkurev/scrapper)
 * Rotating user agents to avoid being blocked
 * Support for extracting data using CSS selectors
+* Support for extracting data using XPath expressions
 * Support for extracting data using dot notation from JSON responses
 * Support for extracting data using regular expressions
 * Caching responses to avoid repeated requests
@@ -30,6 +31,12 @@ $image = $scraper->getSelector('meta[property=og:image]|content')->first();
 
 // Get all paragraph innerHtml as an array
 $links = $scraper->getSelector('p')->all();
+
+// Get the first h1 element using XPath
+$h1 = $scraper->getXpath('//h1')->first();
+
+// Get the href attribute of the first link using XPath
+$linkHref = $scraper->getXpath('//a', 'attr', ['href'])->first();
  
  // Get values from the page via regex
 $author = $scraper->getRegex('~"user"\:"(.*)"~')->first();
