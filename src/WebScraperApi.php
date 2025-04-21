@@ -16,7 +16,7 @@ class WebScraperApi extends AbstractWebScraper
         'full-content' => true,
         'device' => 'Desktop Chrome',
         'wait-until' => 'networkidle',
-        'timeout' => 120000,
+        'timeout' => 30000,
         'cache' => false, // We cache in this app.
     ];
 
@@ -34,7 +34,9 @@ class WebScraperApi extends AbstractWebScraper
 
     public function getRequest(): PendingRequest
     {
-        return Http::withHeaders([])->timeout($this->scraperRequestTimeout);
+        return Http::withHeaders([])
+            ->connectTimeout($this->getConnectTimeout())
+            ->timeout($this->getRequestTimeout());
     }
 
     public function get(): self
@@ -83,6 +85,9 @@ class WebScraperApi extends AbstractWebScraper
 
     public function getRequestParams(): array
     {
-        return array_merge(['url' => $this->url], $this->defaultRequestParams, $this->getOptions());
+        $defaultParams = $this->defaultRequestParams;
+        $defaultParams['timeout'] = $this->getRequestTimeout() * 1000; // Convert to milliseconds
+
+        return array_merge(['url' => $this->url], $defaultParams, $this->getOptions());
     }
 }

@@ -19,7 +19,9 @@ abstract class AbstractWebScraper implements WebScraperInterface
 
     protected int $cacheMinsTtl = 720;
 
-    protected int $scraperRequestTimeout = 120;
+    protected int $scraperRequestTimeout = 30;
+
+    protected int $scraperConnectTimeout = 30;
 
     protected string $cacheKey = 'web_scraper:';
 
@@ -115,9 +117,34 @@ abstract class AbstractWebScraper implements WebScraperInterface
         return $this;
     }
 
+    public function getRequestTimeout(): int
+    {
+        return $this->scraperRequestTimeout;
+    }
+
+    public function setRequestTimeout(int $scraperRequestTimeout): self
+    {
+        $this->scraperRequestTimeout = $scraperRequestTimeout;
+
+        return $this;
+    }
+
+    public function getConnectTimeout(): int
+    {
+        return $this->scraperConnectTimeout;
+    }
+
+    public function setConnectTimeout(int $scraperConnectTimeout): self
+    {
+        $this->scraperConnectTimeout = $scraperConnectTimeout;
+
+        return $this;
+    }
+
     public function getRequest(): PendingRequest
     {
-        return Http::timeout($this->scraperRequestTimeout);
+        return Http::connectTimeout($this->getConnectTimeout())
+            ->timeout($this->getRequestTimeout());
     }
 
     abstract public function get(): self;

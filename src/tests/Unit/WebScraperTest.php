@@ -173,6 +173,17 @@ class WebScraperTest extends TestCase
         $this->assertStringContainsString('More information...', $result->get(1));
     }
 
+    public function test_can_get_and_set_timeouts()
+    {
+        $scraper = $this->getScraper();
+
+        $scraper->setConnectTimeout(11);
+        $scraper->setRequestTimeout(12);
+
+        $this->assertSame(11, $scraper->getConnectTimeout());
+        $this->assertSame(12, $scraper->getRequestTimeout());
+    }
+
     protected function getScraper(): WebScraperInterface
     {
         return WebScraper::make($this->scraperName)->setUseCache(false);

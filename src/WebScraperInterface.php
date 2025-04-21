@@ -33,6 +33,14 @@ interface WebScraperInterface
 
     public function getCacheMinsTtl(): int;
 
+    public function setConnectTimeout(int $scraperConnectTimeout): self;
+
+    public function getConnectTimeout(): int;
+
+    public function setRequestTimeout(int $scraperRequestTimeout): self;
+
+    public function getRequestTimeout(): int;
+
     public function getDom(): Crawler;
 
     public function getSelector(string $selector, string|Closure $nodeContent = 'text', array $nodeContentArgs = []): Collection;
