@@ -218,6 +218,14 @@ abstract class AbstractWebScraper implements WebScraperInterface
         return collect($matches[1] ?? []);
     }
 
+    public function getSchemaOrg(): Collection
+    {
+        return $this->getSelector('script[type="application/ld+json"]')
+            ->map(fn ($json) => json_decode($json, true))
+            ->filter()
+            ->values();
+    }
+
     /**
      * Escape selector for Crawler, this will probably need more refinement
      * over time.

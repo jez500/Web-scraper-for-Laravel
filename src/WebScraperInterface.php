@@ -51,6 +51,8 @@ interface WebScraperInterface
 
     public function getRegex(string $regex): Collection;
 
+    public function getSchemaOrg(): Collection;
+
     public function getErrors(): array;
 
     public function getBody(): string;
