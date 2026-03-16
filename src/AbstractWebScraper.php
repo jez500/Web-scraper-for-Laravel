@@ -31,6 +31,8 @@ abstract class AbstractWebScraper implements WebScraperInterface
 
     protected array $options = [];
 
+    protected string $cookies = '';
+
     protected array $errors = [];
 
     public function __construct()
@@ -49,12 +51,18 @@ abstract class AbstractWebScraper implements WebScraperInterface
 
     public function buildHeaders(): array
     {
-        return [
+        $headers = [
             'User-Agent' => $this->userAgentGenerator->generate(),
             'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language' => 'en-US,en;q=0.9',
             'Accept-Encoding' => 'gzip, deflate, br',
         ];
+
+        if ($this->cookies) {
+            $headers['Cookie'] = $this->cookies;
+        }
+
+        return $headers;
     }
 
     public function setOptions(array $options): self
@@ -79,6 +87,13 @@ abstract class AbstractWebScraper implements WebScraperInterface
     public function getUrl(): string
     {
         return $this->url;
+    }
+
+    public function setCookies(string $cookies): self
+    {
+        $this->cookies = $cookies;
+
+        return $this;
     }
 
     public function setUseCache(bool $useCache): self

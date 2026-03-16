@@ -58,4 +58,6 @@ interface WebScraperInterface
     public function getBody(): string;
 
     public function setBody(string $body): self;
+
+    public function setCookies(string $cookies): self;
 }

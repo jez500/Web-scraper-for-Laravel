@@ -36,6 +36,26 @@ class WebScraperApiTest extends WebScraperTest
         $this->assertSame('test', $scraper->from('http://foo.bar')->get()->getBody());
     }
 
+    public function test_can_set_cookies()
+    {
+        $scraper = new WebScraperApi;
+        $cookies = 'cookie1=value1; cookie2=value2';
+        $scraper->setCookies($cookies);
+        $reqParams = $scraper->getRequestParams();
+        $this->assertArrayHasKey('extra-http-headers', $reqParams);
+        $this->assertSame($reqParams['extra-http-headers'], "Cookie:$cookies");
+    }
+
+    public function test_cookies_dont_override_extra_headers()
+    {
+        $scraper = new WebScraperApi;
+        $cookies = 'cookie1=value1; cookie2=value2';
+        $scraper->setOptions(['extra-http-headers' => 'X-Test-Header: test-value']);
+        $scraper->setCookies($cookies);
+        $reqParams = $scraper->getRequestParams();
+        $this->assertSame($reqParams['extra-http-headers'], 'X-Test-Header: test-value');
+    }
+
     protected function setupMocks(): void
     {
         Http::fake([

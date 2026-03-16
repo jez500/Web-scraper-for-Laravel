@@ -53,6 +53,16 @@ class WebScraperTest extends TestCase
         $this->assertEquals('https://example.com', $scraper->getUrl());
     }
 
+    public function test_can_set_cookies()
+    {
+        $scraper = $this->getScraper();
+        $cookies = 'cookie1=value1; cookie2=value2';
+        $scraper->setCookies($cookies);
+        $headers = $scraper->buildHeaders();
+        $this->assertArrayHasKey('Cookie', $headers);
+        $this->assertSame($cookies, $headers['Cookie']);
+    }
+
     public function test_can_set_use_cache()
     {
         $scraper = $this->getScraper();
