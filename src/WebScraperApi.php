@@ -88,6 +88,10 @@ class WebScraperApi extends AbstractWebScraper
         $defaultParams = $this->defaultRequestParams;
         $defaultParams['timeout'] = $this->getRequestTimeout() * 1000; // Convert to milliseconds
 
+        if ($this->cookies) {
+            $defaultParams['extra-http-headers'] = "Cookie:{$this->cookies}";
+        }
+
         return array_merge(['url' => $this->url], $defaultParams, $this->getOptions());
     }
 }
