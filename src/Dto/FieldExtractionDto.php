@@ -28,7 +28,7 @@ class FieldExtractionDto
 
         $dto = new self(
             type: (string) ($data['type'] ?? ''),
-            value: array_key_exists('value', $data) && $data['value'] !== null ? (string) $data['value'] : null,
+            value: self::normalizeOptionalString($data, 'value'),
             prepend: self::normalizeOptionalString($data, 'prepend'),
             append: self::normalizeOptionalString($data, 'append'),
             match: $match,

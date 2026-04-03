@@ -57,13 +57,13 @@ Extract elements using CSS selectors:
 $title = $scraper->getSelector('title')->first();
 
 // Get the content attribute of a meta tag
-$image = $scraper->getSelector('meta[property=og:image]|content')->first();
+$image = $scraper->getSelector('meta[property=og:image]', 'attr', ['content'])->first();
 
 // Get all paragraph innerHtml as an array
 $paragraphs = $scraper->getSelector('p')->all();
 
 // Get a specific attribute
-$links = $scraper->getSelector('a|href')->all();
+$links = $scraper->getSelector('a', 'attr', ['href'])->all();
 ```
 
 ### XPath Expressions

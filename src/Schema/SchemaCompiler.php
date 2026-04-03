@@ -77,8 +77,13 @@ class SchemaCompiler
     {
         $key = $this->normalizeMatchKey($value);
 
-        if ($key !== null && array_key_exists($key, $match->cases)) {
-            return $this->resolveField($match->cases[$key]);
+        $normalizedCases = [];
+        foreach ($match->cases as $caseKey => $caseDefinition) {
+            $normalizedCases[$this->normalizeMatchKey($caseKey)] = $caseDefinition;
+        }
+
+        if ($key !== null && array_key_exists($key, $normalizedCases)) {
+            return $this->resolveField($normalizedCases[$key]);
         }
 
         if ($match->default !== null) {
@@ -96,6 +101,10 @@ class SchemaCompiler
 
         if ($value === null) {
             return null;
+        }
+
+        if ($field->prepend === null && $field->append === null) {
+            return $value;
         }
 
         $value = (string) $value;
