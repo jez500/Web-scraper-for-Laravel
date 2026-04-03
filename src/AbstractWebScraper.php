@@ -8,6 +8,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
 use Jez500\WebScraperForLaravel\Schema\SchemaCompiler;
@@ -243,7 +244,7 @@ abstract class AbstractWebScraper implements WebScraperInterface
             ->values();
     }
 
-    public function fromDto(ScrapeSchemaDto|array|string $schema): Collection
+    public function fromDto(FieldExtractionDto|ScrapeSchemaDto|array|string $schema): Collection
     {
         return (new SchemaCompiler($this))->compile($schema);
     }

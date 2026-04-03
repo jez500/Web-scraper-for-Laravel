@@ -153,6 +153,7 @@ $data = WebScraper::api()
 ### Typed Scrape Schemas
 
 ```php
+use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 
 // Define a schema for structured data extraction
@@ -180,6 +181,23 @@ $data = WebScraper::http()
     ->fromDto($schema);
 
 // $data will be: ['title' => '...', 'description' => '...', 'image' => '...']
+```
+
+`fromDto(...)` also accepts a single `FieldExtractionDto` when you only need one
+extraction rule:
+
+```php
+$title = FieldExtractionDto::fromArray([
+    'type' => 'css',
+    'value' => 'title',
+]);
+
+$data = WebScraper::http()
+    ->from('https://example.com')
+    ->get()
+    ->fromDto($title);
+
+// $data will be: ['field' => 'Example Domain']
 ```
 
 ### Advanced Features

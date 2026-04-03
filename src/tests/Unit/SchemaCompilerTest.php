@@ -2,6 +2,7 @@
 
 namespace Jez500\WebScraperForLaravel\tests\Unit;
 
+use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 
 class SchemaCompilerTest extends WebScraperTest
@@ -108,6 +109,21 @@ class SchemaCompilerTest extends WebScraperTest
             ->fromDto($schema);
 
         $this->assertSame('Example Domain', $result->get('title'));
+    }
+
+    public function test_from_dto_accepts_field_extraction_dto_payloads(): void
+    {
+        $field = FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+        ]);
+
+        $result = $this->getScraper()
+            ->from('https://example.com/')
+            ->get()
+            ->fromDto($field);
+
+        $this->assertSame('Example Domain', $result->get('field'));
     }
 
     public function test_from_dto_accepts_legacy_array_payloads(): void
