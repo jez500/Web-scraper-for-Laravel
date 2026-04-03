@@ -109,4 +109,26 @@ class SchemaCompilerTest extends WebScraperTest
 
         $this->assertSame('Example Domain', $result->get('title'));
     }
+
+    public function test_from_dto_accepts_legacy_array_payloads(): void
+    {
+        $result = $this->getScraper()
+            ->from('https://example.com/')
+            ->get()
+            ->fromDto([
+                'fields' => [
+                    'title' => [
+                        'type' => 'css',
+                        'value' => 'title',
+                    ],
+                    'heading' => [
+                        'type' => 'xpath',
+                        'value' => '//h1',
+                    ],
+                ],
+            ]);
+
+        $this->assertSame('Example Domain', $result->get('title'));
+        $this->assertSame('Example Domain', $result->get('heading'));
+    }
 }
