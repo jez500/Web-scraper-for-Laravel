@@ -86,9 +86,6 @@ class SchemaCompiler
     {
         if (str_starts_with($selector, '!')) {
             $actualSelector = substr($selector, 1);
-            if ($actualSelector === '') {
-                throw new \InvalidArgumentException('CSS selector cannot be empty after negation prefix "!"');
-            }
             return [$actualSelector, 'html'];
         }
 
