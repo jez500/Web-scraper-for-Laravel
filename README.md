@@ -10,6 +10,7 @@ A package to make it easier to scrape external web pages using laravel.
 * Support for extracting data using XPath expressions
 * Support for extracting data using dot notation from JSON responses
 * Support for extracting data using regular expressions
+* Support for typed scrape schemas via DTOs and `fromDto(...)`
 * Caching responses to avoid repeated requests
 
 ## Usage examples
@@ -54,6 +55,21 @@ $title = WebScraper::api()
     ->get()
     ->getSelector('title')
     ->first();
+
+// Compile a validated schema into scraper output
+$schema = \Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto::fromArray([
+    'fields' => [
+        'title' => [
+            'type' => 'css',
+            'value' => 'title',
+        ],
+    ],
+]);
+
+$data = WebScraper::http()
+    ->from('https://example.com')
+    ->get()
+    ->fromDto($schema);
 ```
 
 ## Installation

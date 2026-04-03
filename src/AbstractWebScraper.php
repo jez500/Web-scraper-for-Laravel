@@ -8,7 +8,9 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
+use Jez500\WebScraperForLaravel\Schema\SchemaCompiler;
 use Symfony\Component\DomCrawler\Crawler;
 
 abstract class AbstractWebScraper implements WebScraperInterface
@@ -239,6 +241,11 @@ abstract class AbstractWebScraper implements WebScraperInterface
             ->map(fn ($json) => json_decode($json, true))
             ->filter()
             ->values();
+    }
+
+    public function fromDto(ScrapeSchemaDto|array|string $schema): Collection
+    {
+        return (new SchemaCompiler($this))->compile($schema);
     }
 
     /**
