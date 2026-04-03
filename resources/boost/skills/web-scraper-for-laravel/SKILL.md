@@ -1,11 +1,11 @@
 ---
 name: web-scraper-for-laravel
-description: Build and work with the Web Scraper for Laravel package, including HTTP and API scraping, data extraction using CSS selectors, XPath, regex, and JSON dot notation, and typed scrape schemas.
+description: Build and work with the Web Scraper for Laravel package, including HTTP and API scraping, data extraction using CSS selectors, XPath, regex, JSON dot notation, Schema.org, and typed scrape schemas with match definitions.
 ---
 
 # Web Scraper for Laravel
 
-This package makes it easy to scrape external web pages in Laravel applications. It supports both standard HTTP requests and JavaScript-rendered pages, with multiple data extraction methods including CSS selectors, XPath, regular expressions, and JSON dot notation.
+This package makes it easy to scrape external web pages in Laravel applications. It supports both standard HTTP requests and JavaScript-rendered pages, with multiple data extraction methods including CSS selectors, XPath, regular expressions, JSON dot notation, and Schema.org structured data.
 
 ## When to use this skill
 Use this skill when you need to:
@@ -13,99 +13,129 @@ Use this skill when you need to:
 - Extract structured data from web pages using CSS selectors, XPath, or regex
 - Scrape JavaScript-rendered pages that require a browser
 - Work with JSON APIs and extract nested data using dot notation
+- Extract Schema.org structured data from `<script type="application/ld+json">` blocks
 - Create typed scrape schemas using DTOs for consistent data extraction
 - Implement caching to avoid repeated requests
-- Rotate user agents to avoid being blocked
+- Register custom fetch drivers
 
-## HTTP Scraping
+## Drivers
+
+### HTTP Scraping
 
 Use `WebScraper::http()` for standard HTTP requests using Laravel's HTTP client:
 
 ```php
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
 
-// Basic HTTP scraping
 $scraper = WebScraper::http()
     ->from('https://example.com')
     ->get();
 
-// Get the full page body
 $body = $scraper->getBody();
 ```
 
-## API Scraping
+### API Scraping
 
-Use `WebScraper::api()` for JavaScript-rendered pages (requires `jez500/seleniumbase-scrapper`):
+Use `WebScraper::api()` for JavaScript-rendered pages (requires an external scraper API service):
 
 ```php
-// Scrape JavaScript-rendered page
 $scraper = WebScraper::api()
     ->from('https://example.com')
     ->get();
-
-$body = $scraper->getBody();
 ```
+
+### Custom Drivers
+
+Register custom fetch drivers via `extend()`:
+
+```php
+use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
+
+WebScraper::extend('my-driver', function () {
+    return new class implements WebScraperDriverInterface {
+        public function fetch(\Jez500\WebScraperForLaravel\AbstractWebScraper $scraper): string
+        {
+            // Custom fetch logic, return HTML string
+        }
+    };
+});
+
+$scraper = WebScraper::driver('my-driver')->from('https://example.com')->get();
+```
+
+You can also pass a class name string to `extend()` or directly to `driver()`.
+
+## Request Configuration
+
+Configure requests using chainable setter methods:
+
+```php
+$scraper = WebScraper::http()
+    ->from('https://example.com')
+    ->setUseCache(true)            // Enable/disable caching (default: true)
+    ->setCacheMinsTtl(60)          // Cache TTL in minutes (default: 720)
+    ->setConnectTimeout(10)        // Connection timeout in seconds (default: 30)
+    ->setRequestTimeout(10)        // Request timeout in seconds (default: 30)
+    ->setCookies('session=abc123') // Set cookie header
+    ->setOptions(['key' => 'val']) // Driver-specific options
+    ->get();
+```
+
+User agents are automatically rotated on each request via `UserAgentGenerator`.
 
 ## Data Extraction Methods
 
+All extraction methods return `Illuminate\Support\Collection`, so you can use `->first()`, `->all()`, `->map()`, etc.
+
 ### CSS Selectors
 
-Extract elements using CSS selectors:
-
 ```php
-// Get the first title element
+// Get text content of the first title element
 $title = $scraper->getSelector('title')->first();
 
-// Get the content attribute of a meta tag
-$image = $scraper->getSelector('meta[property=og:image]', 'attr', ['content'])->first();
+// Get an HTML attribute
+$image = $scraper->getSelector('meta[property="og\:image"]', 'attr', ['content'])->first();
 
-// Get all paragraph innerHtml as an array
+// Get all paragraph text as an array
 $paragraphs = $scraper->getSelector('p')->all();
 
-// Get a specific attribute
-$links = $scraper->getSelector('a', 'attr', ['href'])->all();
+// Get inner HTML
+$content = $scraper->getSelector('.article-body', 'html')->first();
+
+// Use a custom closure for complex extraction
+$data = $scraper->getSelector('div.card', function (Crawler $node) {
+    return ['title' => $node->filter('h2')->text(), 'link' => $node->filter('a')->attr('href')];
+})->all();
 ```
+
+Note: colons in selectors (e.g. `og:image`) are automatically escaped for Symfony DomCrawler.
 
 ### XPath Expressions
 
-Extract elements using XPath:
-
 ```php
-// Get the first h1 element
 $h1 = $scraper->getXpath('//h1')->first();
-
-// Get the href attribute of the first link
 $linkHref = $scraper->getXpath('//a', 'attr', ['href'])->first();
-
-// Get multiple elements
 $images = $scraper->getXpath('//img[@class="product-image"]')->all();
 ```
 
 ### Regular Expressions
 
-Extract data using regex patterns:
-
 ```php
-// Extract user from JSON-like string
 $author = $scraper->getRegex('~"user"\:"(.*)"~')->first();
-
-// Extract email addresses
 $emails = $scraper->getRegex('~[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}~')->all();
 ```
 
+Returns captured group 1 (`$matches[1]`).
+
 ### JSON Data
 
-Extract nested JSON data using dot notation:
-
 ```php
-// Get JSON data from API response
-$data = WebScraper::http()
+$name = WebScraper::http()
     ->from('https://api.example.com/data.json')
     ->get()
     ->getJson('user.name')
     ->first();
 
-// Extract nested array
 $tags = WebScraper::http()
     ->from('https://api.example.com/data.json')
     ->get()
@@ -113,14 +143,35 @@ $tags = WebScraper::http()
     ->all();
 ```
 
+Uses Laravel's `data_get()` helper for dot notation.
+
+### Schema.org Structured Data
+
+```php
+// Extract all JSON-LD blocks from the page
+$schemas = $scraper->getSchemaOrg()->all();
+
+// Get the first schema
+$schema = $scraper->getSchemaOrg()->first();
+// e.g. ['@type' => 'Article', 'headline' => '...', ...]
+```
+
+### Direct DOM Access
+
+```php
+// Get the Symfony DomCrawler instance for advanced manipulation
+$dom = $scraper->getDom();
+```
+
 ## Typed Scrape Schemas
 
-Use DTOs for type-safe, validated data extraction:
+Use DTOs for structured, validated data extraction. The `fromDto()` method accepts a `ScrapeSchemaDto`, `FieldExtractionDto`, array, or JSON string.
+
+### Basic Schema
 
 ```php
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 
-// Define a schema
 $schema = ScrapeSchemaDto::fromArray([
     'fields' => [
         'title' => [
@@ -129,71 +180,129 @@ $schema = ScrapeSchemaDto::fromArray([
         ],
         'description' => [
             'type' => 'css',
-            'value' => 'meta[name=description]|content',
+            'value' => 'meta[name=description]|content',  // pipe syntax: extracts attribute
         ],
-        'image' => [
+        'body' => [
+            'type' => 'css',
+            'value' => '!.article-body',  // ! prefix: extracts innerHTML
+        ],
+        'author' => [
             'type' => 'xpath',
-            'value' => '//meta[@property="og:image"]/@content',
+            'value' => '//meta[@name="author"]/@content',
+        ],
+        'structured_data' => [
+            'type' => 'schema_org',
         ],
     ],
 ]);
 
-// Apply schema and get structured data
 $data = WebScraper::http()
     ->from('https://example.com')
     ->get()
     ->fromDto($schema);
+
+$data->get('title');       // Single field
+$data->get('description'); // Extracted attribute value
+$data->all();              // All fields as associative array
 ```
 
-Schema field types:
-- `css`: Extract using CSS selector
-- `xpath`: Extract using XPath expression
-- `regex`: Extract using regular expression
-- `json`: Extract from JSON using dot notation
-
-## User Agent Rotation
-
-Rotate user agents to avoid being blocked:
+You can also pass an array or JSON string directly to `fromDto()`:
 
 ```php
-$scraper = WebScraper::http()
-    ->from('https://example.com')
-    ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-    ->get();
+$data = $scraper->fromDto([
+    'fields' => [
+        'title' => ['type' => 'css', 'value' => 'h1'],
+    ],
+]);
 ```
 
-## Caching
+### Schema Field Types
 
-Cache responses to avoid repeated requests:
+| Type | Requires `value` | Description |
+|------|:-:|---|
+| `css` | Yes | CSS selector extraction |
+| `xpath` | Yes | XPath expression extraction |
+| `regex` | Yes | Regular expression extraction |
+| `json` | Yes | JSON dot notation extraction |
+| `schema_org` | No | Schema.org JSON-LD extraction |
+
+### CSS Selector Shorthand in Schemas
+
+When using `type: 'css'` in a schema field, the `value` supports shorthand syntax:
+
+- **`selector`** — extracts text content (default)
+- **`selector|attribute`** — extracts the named HTML attribute (e.g. `meta[name=description]|content`)
+- **`!selector`** — extracts inner HTML (e.g. `!.rich-content`)
+
+### Prepend / Append Transforms
+
+Add static text before or after extracted values:
 
 ```php
-// Cache for 1 hour
-$scraper = WebScraper::http()
-    ->from('https://example.com')
-    ->cacheFor(3600)
-    ->get();
+$schema = ScrapeSchemaDto::fromArray([
+    'fields' => [
+        'image' => [
+            'type' => 'css',
+            'value' => 'img.hero|src',
+            'prepend' => 'https://example.com',  // Prefix relative URLs
+        ],
+        'price' => [
+            'type' => 'css',
+            'value' => '.price',
+            'append' => ' USD',
+        ],
+    ],
+]);
 ```
 
-## Error Handling
+### Match Definitions (Conditional Extraction)
 
-Always handle potential scraping errors:
+Use `match` to conditionally resolve a field based on the extracted value:
 
 ```php
-try {
-    $scraper = WebScraper::http()
-        ->from('https://example.com')
-        ->get();
-
-    $title = $scraper->getSelector('title')->first();
-} catch (\Exception $e) {
-    // Handle scraping errors
-    logger()->error('Scraping failed', ['error' => $e->getMessage()]);
-}
+$schema = ScrapeSchemaDto::fromArray([
+    'fields' => [
+        'content_type' => [
+            'type' => 'css',
+            'value' => 'meta[name=type]|content',
+            'match' => [
+                'cases' => [
+                    'article' => [
+                        'type' => 'css',
+                        'value' => '.article-body',
+                    ],
+                    'video' => [
+                        'type' => 'css',
+                        'value' => 'video|src',
+                    ],
+                ],
+                'default' => [
+                    'type' => 'css',
+                    'value' => '.fallback-content',
+                ],
+            ],
+        ],
+    ],
+]);
 ```
+
+The extracted value is matched (case-insensitive, trimmed) against the `cases` keys. If no case matches, `default` is used. If no default is set, the original extracted value is returned.
 
 ## Testing
 
-When testing scraping logic, use Laravel's HTTP client mocking:
+Use `WebScraper::fake()` for testing (no HTTP requests are made):
+
+```php
+use Jez500\WebScraperForLaravel\Facades\WebScraper;
+
+$scraper = WebScraper::fake()
+    ->setBody('<html><title>Test</title></html>');
+
+$title = $scraper->getSelector('title')->first();
+// 'Test'
+```
+
+You can also use Laravel's HTTP client faking for the HTTP driver:
 
 ```php
 use Illuminate\Support\Facades\Http;
@@ -204,17 +313,43 @@ Http::fake([
 
 $scraper = WebScraper::http()->from('https://example.com')->get();
 $title = $scraper->getSelector('title')->first();
-
-$this->assertEquals('Test', $title);
 ```
 
-## Best Practices
+## Error Handling
 
-- Always cache requests when data doesn't change frequently
-- Use appropriate delays between requests to respect rate limits
-- Check robots.txt before scraping
-- Handle errors gracefully and implement retry logic for transient failures
-- Use typed schemas for complex data extraction to ensure consistency
-- Test scraping logic with mocked responses
-- Respect website terms of service
-- Consider using API endpoints when available instead of scraping HTML
+Handle scraping errors with try/catch. The package throws specific exceptions:
+
+- `DomSelectorException` — invalid CSS selector or XPath expression
+- `SchemaValidationException` — invalid schema definition (call `->errors()` for details)
+
+```php
+use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
+use Jez500\WebScraperForLaravel\Exceptions\SchemaValidationException;
+
+try {
+    $scraper = WebScraper::http()->from('https://example.com')->get();
+    $title = $scraper->getSelector('title')->first();
+} catch (DomSelectorException $e) {
+    // Invalid selector
+} catch (SchemaValidationException $e) {
+    // Invalid schema — $e->errors() returns array of validation messages
+} catch (\Exception $e) {
+    // Network or other errors
+}
+```
+
+Errors from fetch drivers are accumulated and accessible via `$scraper->getErrors()`.
+
+## Key Classes
+
+| Class | Namespace | Purpose |
+|---|---|---|
+| `WebScraper` (Facade) | `Jez500\WebScraperForLaravel\Facades` | Entry point |
+| `WebScraperFactory` | `Jez500\WebScraperForLaravel` | Creates scraper instances |
+| `AbstractWebScraper` | `Jez500\WebScraperForLaravel` | Base scraper with extraction methods |
+| `ScrapeSchemaDto` | `Jez500\WebScraperForLaravel\Dto` | Schema definition DTO |
+| `FieldExtractionDto` | `Jez500\WebScraperForLaravel\Dto` | Single field definition DTO |
+| `MatchDefinitionDto` | `Jez500\WebScraperForLaravel\Dto` | Conditional match definition DTO |
+| `SchemaCompiler` | `Jez500\WebScraperForLaravel\Schema` | Compiles and executes schemas |
+| `SchemaValidator` | `Jez500\WebScraperForLaravel\Schema` | Validates schema structure |
+| `WebScraperDriverInterface` | `Jez500\WebScraperForLaravel\Drivers` | Interface for custom drivers |
