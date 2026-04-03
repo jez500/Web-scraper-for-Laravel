@@ -85,7 +85,11 @@ class SchemaCompiler
     public static function parseCssSelector(string $selector): array
     {
         if (str_starts_with($selector, '!')) {
-            return [substr($selector, 1) ?: '', 'html'];
+            $actualSelector = substr($selector, 1);
+            if ($actualSelector === '') {
+                throw new \InvalidArgumentException('CSS selector cannot be empty after negation prefix "!"');
+            }
+            return [$actualSelector, 'html'];
         }
 
         if (! str_contains($selector, '|')) {
@@ -94,8 +98,17 @@ class SchemaCompiler
 
         $parts = explode('|', $selector);
         $attr = array_pop($parts);
+        $selectorPart = implode('|', $parts);
 
-        return [implode('|', $parts), 'attr', [$attr]];
+        if ($selectorPart === '') {
+            throw new \InvalidArgumentException('CSS selector cannot be empty before pipe delimiter "|" in: ' . $selector);
+        }
+
+        if ($attr === '') {
+            throw new \InvalidArgumentException('Attribute name cannot be empty after pipe delimiter "|" in: ' . $selector);
+        }
+
+        return [$selectorPart, 'attr', [$attr]];
     }
 
     protected function resolveMatch(mixed $value, MatchDefinitionDto $match): mixed
