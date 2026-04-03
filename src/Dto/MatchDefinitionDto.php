@@ -17,12 +17,22 @@ class MatchDefinitionDto
 
     public static function fromArray(array $data): self
     {
-        $default = isset($data['default']) && is_array($data['default'])
-            ? FieldExtractionDto::fromArray($data['default'])
-            : null;
+        $default = null;
+        if (array_key_exists('default', $data) && $data['default'] !== null) {
+            if (! is_array($data['default'])) {
+                throw new SchemaValidationException(['match.default must be an object definition.']);
+            }
+
+            $default = FieldExtractionDto::fromArray($data['default']);
+        }
 
         $cases = [];
-        foreach (($data['cases'] ?? []) as $match => $definition) {
+        $rawCases = $data['cases'] ?? [];
+        if (! is_array($rawCases)) {
+            throw new SchemaValidationException(['match.cases must be an object definition.']);
+        }
+
+        foreach ($rawCases as $match => $definition) {
             if (! is_array($definition)) {
                 throw new SchemaValidationException([
                     "match.cases.{$match} must be an object definition.",

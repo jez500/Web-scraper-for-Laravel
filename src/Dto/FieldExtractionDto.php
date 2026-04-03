@@ -17,12 +17,21 @@ class FieldExtractionDto
 
     public static function fromArray(array $data): self
     {
+        $match = null;
+        if (array_key_exists('match', $data) && $data['match'] !== null) {
+            if (! is_array($data['match'])) {
+                throw new SchemaValidationException(['field.match must be an object definition.']);
+            }
+
+            $match = MatchDefinitionDto::fromArray($data['match']);
+        }
+
         $dto = new self(
             type: (string) ($data['type'] ?? ''),
             value: array_key_exists('value', $data) && $data['value'] !== null ? (string) $data['value'] : null,
-            prepend: array_key_exists('prepend', $data) && $data['prepend'] !== null ? (string) $data['prepend'] : null,
-            append: array_key_exists('append', $data) && $data['append'] !== null ? (string) $data['append'] : null,
-            match: isset($data['match']) ? MatchDefinitionDto::fromArray($data['match']) : null,
+            prepend: self::normalizeOptionalString($data, 'prepend'),
+            append: self::normalizeOptionalString($data, 'append'),
+            match: $match,
         );
 
         (new SchemaValidator)->validateField($dto);
@@ -67,5 +76,18 @@ class FieldExtractionDto
         }
 
         return $payload;
+    }
+
+    protected static function normalizeOptionalString(array $data, string $key): ?string
+    {
+        if (! array_key_exists($key, $data) || $data[$key] === null) {
+            return null;
+        }
+
+        if (! is_string($data[$key])) {
+            throw new SchemaValidationException(["field.{$key} must be a string or null."]);
+        }
+
+        return $data[$key];
     }
 }

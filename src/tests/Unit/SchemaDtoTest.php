@@ -78,4 +78,70 @@ class SchemaDtoTest extends TestCase
             ],
         ]);
     }
+
+    public function test_invalid_match_definition_throws_validation_exception(): void
+    {
+        $this->expectException(SchemaValidationException::class);
+        $this->expectExceptionMessage('field.match must be an object definition');
+
+        FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+            'match' => 'in stock',
+        ]);
+    }
+
+    public function test_invalid_match_default_throws_validation_exception(): void
+    {
+        $this->expectException(SchemaValidationException::class);
+        $this->expectExceptionMessage('match.default must be an object definition');
+
+        FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+            'match' => [
+                'default' => 'fallback',
+            ],
+        ]);
+    }
+
+    public function test_invalid_prepend_values_throw_validation_exception(): void
+    {
+        $this->expectException(SchemaValidationException::class);
+        $this->expectExceptionMessage('field.prepend must be a string or null');
+
+        FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+            'prepend' => ['prefix'],
+            'append' => ['suffix'],
+        ]);
+    }
+
+    public function test_invalid_append_values_throw_validation_exception(): void
+    {
+        $this->expectException(SchemaValidationException::class);
+        $this->expectExceptionMessage('field.append must be a string or null');
+
+        FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+            'prepend' => 'prefix',
+            'append' => ['suffix'],
+        ]);
+    }
+
+    public function test_invalid_match_cases_throw_validation_exception(): void
+    {
+        $this->expectException(SchemaValidationException::class);
+        $this->expectExceptionMessage('match.cases must be an object definition');
+
+        FieldExtractionDto::fromArray([
+            'type' => 'css',
+            'value' => 'title',
+            'match' => [
+                'cases' => 'in stock',
+            ],
+        ]);
+    }
 }
