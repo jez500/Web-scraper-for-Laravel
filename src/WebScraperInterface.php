@@ -5,6 +5,7 @@ namespace Jez500\WebScraperForLaravel;
 use Closure;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
+use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -13,6 +14,8 @@ interface WebScraperInterface
     public function from(string $url): self;
 
     public function getRequest(): PendingRequest;
+
+    public function setDriver(Drivers\WebScraperDriverInterface $driver): self;
 
     public function get(): self;
 
@@ -54,7 +57,7 @@ interface WebScraperInterface
 
     public function getSchemaOrg(): Collection;
 
-    public function fromDto(ScrapeSchemaDto|array|string $schema): Collection;
+    public function fromDto(FieldExtractionDto|ScrapeSchemaDto|array|string $schema): Collection;
 
     public function getErrors(): array;
 

@@ -17,7 +17,7 @@ class SchemaCompiler
         protected SchemaValidator $validator = new SchemaValidator,
     ) {}
 
-    public function compile(ScrapeSchemaDto|array|string $schema): Collection
+    public function compile(FieldExtractionDto|ScrapeSchemaDto|array|string $schema): Collection
     {
         $schema = $this->normalizeSchema($schema);
         $this->validator->validateSchema($schema);
@@ -31,8 +31,14 @@ class SchemaCompiler
         return collect($result);
     }
 
-    protected function normalizeSchema(ScrapeSchemaDto|array|string $schema): ScrapeSchemaDto
+    protected function normalizeSchema(FieldExtractionDto|ScrapeSchemaDto|array|string $schema): ScrapeSchemaDto
     {
+        if ($schema instanceof FieldExtractionDto) {
+            return new ScrapeSchemaDto([
+                'field' => $schema,
+            ]);
+        }
+
         if ($schema instanceof ScrapeSchemaDto) {
             return $schema;
         }
@@ -71,8 +77,13 @@ class SchemaCompiler
     {
         $key = $this->normalizeMatchKey($value);
 
-        if ($key !== null && array_key_exists($key, $match->cases)) {
-            return $this->resolveField($match->cases[$key]);
+        $normalizedCases = [];
+        foreach ($match->cases as $caseKey => $caseDefinition) {
+            $normalizedCases[$this->normalizeMatchKey($caseKey)] = $caseDefinition;
+        }
+
+        if ($key !== null && array_key_exists($key, $normalizedCases)) {
+            return $this->resolveField($normalizedCases[$key]);
         }
 
         if ($match->default !== null) {
@@ -90,6 +101,10 @@ class SchemaCompiler
 
         if ($value === null) {
             return null;
+        }
+
+        if ($field->prepend === null && $field->append === null) {
+            return $value;
         }
 
         $value = (string) $value;
