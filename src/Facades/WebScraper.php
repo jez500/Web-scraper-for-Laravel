@@ -8,7 +8,9 @@ use Jez500\WebScraperForLaravel\WebScraperInterface;
 /**
  * @method static WebScraperInterface http()
  * @method static WebScraperInterface api()
+ * @method static WebScraperInterface driver(string $driver)
  * @method static WebScraperInterface make(string $type)
+ * @method static WebScraperInterface extend(string $driver, callable|string $resolver)
  */
 class WebScraper extends Facade
 {

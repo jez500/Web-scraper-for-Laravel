@@ -7,12 +7,19 @@ use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
+use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
+use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
+use Jez500\WebScraperForLaravel\Schema\SchemaCompiler;
 use Symfony\Component\DomCrawler\Crawler;
 
 abstract class AbstractWebScraper implements WebScraperInterface
 {
+    protected WebScraperDriverInterface $driver;
+
     protected UserAgentGenerator $userAgentGenerator;
 
     protected bool $useCache = true;
@@ -40,11 +47,19 @@ abstract class AbstractWebScraper implements WebScraperInterface
         $this->userAgentGenerator = new UserAgentGenerator;
     }
 
+    public function setDriver(WebScraperDriverInterface $driver): self
+    {
+        $this->driver = $driver;
+
+        return $this;
+    }
+
     public function from(string $url): self
     {
-        /** @var WebScraperHttp $self */
-        $self = resolve(static::class);
+        $self = clone $this;
         $self->setUrl($url);
+        $self->body = '';
+        $self->errors = [];
 
         return $self;
     }
@@ -162,7 +177,24 @@ abstract class AbstractWebScraper implements WebScraperInterface
             ->timeout($this->getRequestTimeout());
     }
 
-    abstract public function get(): self;
+    public function get(): self
+    {
+        if (! isset($this->driver)) {
+            throw new Exception('No WebScraper driver has been configured.');
+        }
+
+        $request = fn () => $this->driver->fetch($this);
+
+        $this->body = $this->useCache === true
+            ? Cache::remember(
+                $this->getCacheKey($this->url),
+                now()->addMinutes($this->cacheMinsTtl),
+                $request
+            )
+            : $request();
+
+        return $this;
+    }
 
     public function getDom(): Crawler
     {
@@ -241,6 +273,11 @@ abstract class AbstractWebScraper implements WebScraperInterface
             ->values();
     }
 
+    public function fromDto(FieldExtractionDto|ScrapeSchemaDto|array|string $schema): Collection
+    {
+        return (new SchemaCompiler($this))->compile($schema);
+    }
+
     /**
      * Escape selector for Crawler, this will probably need more refinement
      * over time.
@@ -254,11 +291,22 @@ abstract class AbstractWebScraper implements WebScraperInterface
 
     protected function getCacheKey(string $url): string
     {
-        return $this->cacheKey.class_basename($this).':'.md5($url);
+        $driverKey = isset($this->driver)
+            ? class_basename($this->driver)
+            : class_basename($this);
+
+        return $this->cacheKey.$driverKey.':'.md5($url);
     }
 
     public function getErrors(): array
     {
         return $this->errors;
+    }
+
+    public function addError(array $error): self
+    {
+        $this->errors[] = $error;
+
+        return $this;
     }
 }

@@ -8,7 +8,7 @@ class WebScraperServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->bind('web_scraper', function () {
+        $this->app->singleton('web_scraper', function () {
             return new WebScraperFactory;
         });
     }
