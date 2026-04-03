@@ -150,6 +150,41 @@ $data = WebScraper::api()
     ->first();
 ```
 
+### Custom Drivers
+
+Register a custom driver in a service provider, then resolve it by name:
+
+```php
+use Illuminate\Support\Facades\Http;
+use Jez500\WebScraperForLaravel\AbstractWebScraper;
+use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
+use Jez500\WebScraperForLaravel\Facades\WebScraper;
+
+WebScraper::extend('residential-proxy', function () {
+    return new class implements WebScraperDriverInterface {
+        public function fetch(AbstractWebScraper $scraper): string
+        {
+            $response = Http::withToken(config('services.proxy.token'))
+                ->post(config('services.proxy.endpoint'), [
+                    'url' => $scraper->getUrl(),
+                    'country' => 'us',
+                ]);
+
+            return data_get($response->json(), 'html', '');
+        }
+    };
+});
+
+$scraper = WebScraper::driver('residential-proxy')
+    ->from('https://example.com')
+    ->get();
+
+$title = $scraper->getSelector('title')->first();
+```
+
+`http()` and `api()` remain available for backwards compatibility, and they now
+resolve through the same driver layer internally.
+
 ### Typed Scrape Schemas
 
 ```php

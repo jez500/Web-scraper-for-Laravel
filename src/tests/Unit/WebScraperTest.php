@@ -6,9 +6,12 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Jez500\WebScraperForLaravel\AbstractWebScraper;
+use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
 use Jez500\WebScraperForLaravel\Enums\ScraperServicesEnum;
-use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException; // Added
+use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
+use Jez500\WebScraperForLaravel\WebScraper as WebScraperCore;
 use Jez500\WebScraperForLaravel\WebScraperHttp;
 use Jez500\WebScraperForLaravel\WebScraperInterface;
 use Jez500\WebScraperForLaravel\WebScraperServiceProvider;
@@ -192,6 +195,43 @@ class WebScraperTest extends TestCase
 
         $this->assertSame(11, $scraper->getConnectTimeout());
         $this->assertSame(12, $scraper->getRequestTimeout());
+    }
+
+    public function test_can_resolve_http_via_driver()
+    {
+        $expectedBody = file_get_contents(__DIR__.'/../Mocks/http-response.html');
+
+        Http::fake([
+            'example.com/*' => Http::response($expectedBody),
+        ]);
+
+        $scraper = WebScraper::driver('http')
+            ->setUseCache(false)
+            ->from('https://example.com/')
+            ->get();
+
+        $this->assertInstanceOf(WebScraperHttp::class, $scraper);
+        $this->assertSame($expectedBody, $scraper->getBody());
+    }
+
+    public function test_can_register_a_custom_driver()
+    {
+        WebScraper::extend('proxy-driver', function () {
+            return new class implements WebScraperDriverInterface
+            {
+                public function fetch(AbstractWebScraper $scraper): string
+                {
+                    return '<html><head><title>Proxy Title</title></head><body>proxy</body></html>';
+                }
+            };
+        });
+
+        $scraper = WebScraper::driver('proxy-driver')
+            ->from('https://example.com/')
+            ->get();
+
+        $this->assertInstanceOf(WebScraperCore::class, $scraper);
+        $this->assertSame('Proxy Title', $scraper->getSelector('title')->first());
     }
 
     protected function getScraper(): WebScraperInterface

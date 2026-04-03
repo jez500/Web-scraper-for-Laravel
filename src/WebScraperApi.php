@@ -2,10 +2,10 @@
 
 namespace Jez500\WebScraperForLaravel;
 
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
-use Symfony\Component\HttpFoundation\Response;
+use Jez500\WebScraperForLaravel\Drivers\ApiDriver;
+use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
 
 class WebScraperApi extends AbstractWebScraper
 {
@@ -19,6 +19,13 @@ class WebScraperApi extends AbstractWebScraper
         'timeout' => 30000,
         'cache' => false, // We cache in this app.
     ];
+
+    public function __construct(?WebScraperDriverInterface $driver = null)
+    {
+        parent::__construct();
+
+        $this->setDriver($driver ?? resolve(ApiDriver::class));
+    }
 
     public function setScraperApiBaseUrl(string $scraperApiBaseUrl): self
     {
@@ -37,50 +44,6 @@ class WebScraperApi extends AbstractWebScraper
         return Http::withHeaders([])
             ->connectTimeout($this->getConnectTimeout())
             ->timeout($this->getRequestTimeout());
-    }
-
-    public function get(): self
-    {
-        $request = function () {
-            try {
-                $result = $this->getRequest()
-                    ->get($this->getScraperApiBaseUrl(), $this->getRequestParams());
-
-                $json = $result->json();
-
-                $fullContent = data_get($json, 'fullContent', '');
-
-                if (! $fullContent) {
-                    $this->errors[] = [
-                        'request_url' => $this->getScraperApiBaseUrl(),
-                        'request_params' => $this->getRequestParams(),
-                        'message' => 'No content found',
-                        'code' => Response::HTTP_NO_CONTENT,
-                        'response' => $json,
-                    ];
-                }
-
-                return $fullContent;
-            } catch (ConnectionException $e) {
-                logger()->error($e->getMessage());
-                $this->errors[] = [
-                    'message' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                ];
-            }
-
-            return '';
-        };
-
-        $this->body = $this->useCache
-            ? cache()->remember(
-                $this->getCacheKey($this->url),
-                now()->addMinutes($this->cacheMinsTtl),
-                $request
-            )
-            : $request();
-
-        return $this;
     }
 
     public function getRequestParams(): array

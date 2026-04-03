@@ -15,6 +15,8 @@ interface WebScraperInterface
 
     public function getRequest(): PendingRequest;
 
+    public function setDriver(Drivers\WebScraperDriverInterface $driver): self;
+
     public function get(): self;
 
     public function buildHeaders(): array;
