@@ -4,6 +4,7 @@ namespace Jez500\WebScraperForLaravel\tests\Unit;
 
 use Jez500\WebScraperForLaravel\Dto\FieldExtractionDto;
 use Jez500\WebScraperForLaravel\Dto\ScrapeSchemaDto;
+use Jez500\WebScraperForLaravel\Schema\SchemaCompiler;
 
 class SchemaCompilerTest extends WebScraperTest
 {
@@ -146,5 +147,100 @@ class SchemaCompilerTest extends WebScraperTest
 
         $this->assertSame('Example Domain', $result->get('title'));
         $this->assertSame('Example Domain', $result->get('heading'));
+    }
+
+    public function test_css_selector_pipe_delimiter_extracts_attribute(): void
+    {
+        $scraper = $this->getScraper();
+        $scraper->setBody('<html><body><a href="https://example.com" class="link">Click</a></body></html>');
+
+        $result = $scraper->fromDto([
+            'fields' => [
+                'url' => [
+                    'type' => 'css',
+                    'value' => 'a.link|href',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('https://example.com', $result->get('url'));
+    }
+
+    public function test_css_selector_pipe_delimiter_extracts_meta_content(): void
+    {
+        $scraper = $this->getScraper();
+        $scraper->setBody('<html><head><meta property="og:title" content="My Page Title"></head><body></body></html>');
+
+        $result = $scraper->fromDto([
+            'fields' => [
+                'title' => [
+                    'type' => 'css',
+                    'value' => 'meta[property=og:title]|content',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('My Page Title', $result->get('title'));
+    }
+
+    public function test_css_selector_html_prefix_returns_inner_html(): void
+    {
+        $scraper = $this->getScraper();
+        $scraper->setBody('<html><body><div class="rich"><strong>Bold</strong> text</div></body></html>');
+
+        $result = $scraper->fromDto([
+            'fields' => [
+                'content' => [
+                    'type' => 'css',
+                    'value' => '!.rich',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('<strong>Bold</strong> text', $result->get('content'));
+    }
+
+    public function test_css_selector_without_special_chars_returns_text(): void
+    {
+        $result = $this->getScraper()
+            ->from('https://example.com/')
+            ->get()
+            ->fromDto([
+                'fields' => [
+                    'title' => [
+                        'type' => 'css',
+                        'value' => 'title',
+                    ],
+                ],
+            ]);
+
+        $this->assertSame('Example Domain', $result->get('title'));
+    }
+
+    public function test_parse_css_selector_unit(): void
+    {
+        $this->assertSame(
+            ['title'],
+            SchemaCompiler::parseCssSelector('title'),
+            'Plain selector returns single-element array'
+        );
+
+        $this->assertSame(
+            ['meta[property=og:title]', 'attr', ['content']],
+            SchemaCompiler::parseCssSelector('meta[property=og:title]|content'),
+            'Pipe delimiter splits selector and attribute'
+        );
+
+        $this->assertSame(
+            ['.rich-content', 'html'],
+            SchemaCompiler::parseCssSelector('!.rich-content'),
+            'Exclamation prefix returns html mode'
+        );
+
+        $this->assertSame(
+            ['', 'html'],
+            SchemaCompiler::parseCssSelector('!'),
+            'Bare exclamation returns empty selector with html mode'
+        );
     }
 }

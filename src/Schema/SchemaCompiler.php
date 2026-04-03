@@ -64,13 +64,38 @@ class SchemaCompiler
     protected function extract(FieldExtractionDto $field): mixed
     {
         return match ($field->type) {
-            'css' => $this->normalizeCollection($this->scraper->getSelector((string) $field->value)),
+            'css' => $this->normalizeCollection($this->scraper->getSelector(...self::parseCssSelector((string) $field->value))),
             'json' => $this->normalizeCollection($this->scraper->getJson((string) $field->value)),
             'regex' => $this->normalizeCollection($this->scraper->getRegex((string) $field->value)),
             'schema_org' => $this->normalizeCollection($this->scraper->getSchemaOrg()),
             'xpath' => $this->normalizeCollection($this->scraper->getXpath((string) $field->value)),
             default => null,
         };
+    }
+
+    /**
+     * Parse a CSS selector value into arguments for getSelector().
+     *
+     * Supports two shorthand conventions:
+     * - Pipe delimiter: "selector|attribute" extracts the named attribute (e.g. "meta[property=og:title]|content")
+     * - HTML prefix: "!selector" returns raw innerHTML instead of text (e.g. "!.rich-content")
+     *
+     * @return array{0: string, 1?: string, 2?: array<int, string>}
+     */
+    public static function parseCssSelector(string $selector): array
+    {
+        if (str_starts_with($selector, '!')) {
+            return [substr($selector, 1) ?: '', 'html'];
+        }
+
+        if (! str_contains($selector, '|')) {
+            return [$selector];
+        }
+
+        $parts = explode('|', $selector);
+        $attr = array_pop($parts);
+
+        return [implode('|', $parts), 'attr', [$attr]];
     }
 
     protected function resolveMatch(mixed $value, MatchDefinitionDto $match): mixed
