@@ -83,12 +83,14 @@ class WebScraperExtractTest extends WebScraperTest
     public function test_missing_content_field_returns_empty_string(): void
     {
         $response = '{"title": "Example", "author": null}'; // missing content field entirely
+        $scraper = new WebScraperExtract;
+        $scraper->setExtractApiBaseUrl('http://extract-test:3000', true);
+
         Http::fake([
-            'extract:3000/*' => Http::response($response, 200),
+            'extract-test:3000/parser' => Http::response($response, 200),
         ]);
 
-        $scraper = WebScraper::extract()->setUseCache(false);
-        $body = $scraper->from('https://example.com')->get()->getBody();
+        $body = $scraper->setUseCache(false)->from('https://example.com')->get()->getBody();
 
         $this->assertSame('', $body);
     }
@@ -106,7 +108,7 @@ class WebScraperExtractTest extends WebScraperTest
     protected function setupMocks(): void
     {
         Http::fake([
-            'extract:3000/*' => Http::response($this->getMockResponse()),
+            'extract:3000/parser' => Http::response($this->getMockResponse()),
         ]);
     }
 }
