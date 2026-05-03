@@ -178,7 +178,7 @@ $content = WebScraper::extract()
 
 // Use custom Extract API endpoint
 $content = WebScraper::extract()
-    ->setExtractApiBaseUrl('http://my-extract-service:3000')
+    ->setExtractApiBaseUrl('http://my-extract-service:3000/parser')
     ->from('https://example.com/article')
     ->get()
     ->getBody();

@@ -32,10 +32,10 @@ class WebScraperExtractTest extends WebScraperTest
         $scraper = new WebScraperExtract;
         $baseUrl = 'https://my-extract-host';
 
-        $scraper->setExtractApiBaseUrl($baseUrl);
+        $scraper->setExtractApiBaseUrl($baseUrl, true);
 
         Http::fake([
-            'my-extract-host/*' => Http::response('{"content": "test-content"}', 200),
+            'my-extract-host/parser' => Http::response('{"content": "test-content"}', 200),
         ]);
 
         $this->assertSame($baseUrl.'/parser', $scraper->getExtractApiBaseUrl());

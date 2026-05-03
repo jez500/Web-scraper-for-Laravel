@@ -10,24 +10,29 @@ use Jez500\WebScraperForLaravel\Drivers\WebScraperDriverInterface;
 class WebScraperExtract extends AbstractWebScraper
 {
     public static string $extractApiUrl = 'http://extract:3000/parser';
+    private string $instanceApiUrl;
 
     public function __construct(?WebScraperDriverInterface $driver = null)
     {
         parent::__construct();
 
+        $this->instanceApiUrl = static::$extractApiUrl;
         $this->setDriver($driver ?? resolve(ExtractDriver::class));
     }
 
-    public function setExtractApiBaseUrl(string $url): self
+    public function setExtractApiBaseUrl(string $url, bool $appendParser = false): self
     {
-        static::$extractApiUrl = rtrim($url, '/').'/parser';
+        $this->instanceApiUrl = rtrim($url, '/');
+        if ($appendParser) {
+            $this->instanceApiUrl .= '/parser';
+        }
 
         return $this;
     }
 
     public function getExtractApiBaseUrl(): string
     {
-        return static::$extractApiUrl;
+        return $this->instanceApiUrl;
     }
 
     public function getRequest(): PendingRequest

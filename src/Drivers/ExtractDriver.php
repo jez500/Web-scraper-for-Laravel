@@ -25,9 +25,11 @@ class ExtractDriver implements WebScraperDriverInterface
             $content = data_get($json, 'content', '');
 
             if (! $content) {
+                $requestBody = $scraper->getRequestBody();
+                $sanitizedBody = $this->sanitizeRequestBody($requestBody);
                 $scraper->addError([
                     'request_url' => $scraper->getExtractApiBaseUrl(),
-                    'request_body' => $scraper->getRequestBody(),
+                    'request_body' => $sanitizedBody,
                     'message' => 'No content found',
                     'code' => Response::HTTP_NO_CONTENT,
                     'response' => $json,
@@ -51,5 +53,26 @@ class ExtractDriver implements WebScraperDriverInterface
         return Http::withHeaders(['Content-Type' => 'application/json'])
             ->connectTimeout($scraper->getConnectTimeout())
             ->timeout($scraper->getRequestTimeout());
+    }
+
+    private function sanitizeRequestBody(array $requestBody): array
+    {
+        $sanitized = $requestBody;
+        $sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token', 'x-access-token'];
+
+        if (isset($sanitized['options']['headers']) && is_array($sanitized['options']['headers'])) {
+            $headers = [];
+            foreach ($sanitized['options']['headers'] as $key => $value) {
+                $lowerKey = strtolower($key);
+                if (in_array($lowerKey, $sensitiveHeaders, true)) {
+                    $headers[$key] = '[REDACTED]';
+                } else {
+                    $headers[$key] = $value;
+                }
+            }
+            $sanitized['options']['headers'] = $headers;
+        }
+
+        return $sanitized;
     }
 }
