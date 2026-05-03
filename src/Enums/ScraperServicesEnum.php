@@ -10,6 +10,8 @@ enum ScraperServicesEnum: string
 
     case Fake = 'fake';
 
+    case Extract = 'extract';
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

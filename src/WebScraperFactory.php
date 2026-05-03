@@ -21,6 +21,11 @@ class WebScraperFactory
         return $this->driver(ScraperServicesEnum::Api->value);
     }
 
+    public function extract(): WebScraperInterface
+    {
+        return $this->driver(ScraperServicesEnum::Extract->value);
+    }
+
     public function fake(): WebScraperInterface
     {
         return resolve(WebScraperFake::class);
@@ -38,6 +43,7 @@ class WebScraperFactory
         return match ($driver) {
             ScraperServicesEnum::Http->value => resolve(WebScraperHttp::class),
             ScraperServicesEnum::Api->value => resolve(WebScraperApi::class),
+            ScraperServicesEnum::Extract->value => resolve(WebScraperExtract::class),
             ScraperServicesEnum::Fake->value => resolve(WebScraperFake::class),
             default => $this->makeCustomDriver($driver),
         };
