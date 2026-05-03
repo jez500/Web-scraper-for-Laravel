@@ -48,7 +48,7 @@ class ExtractDriver implements WebScraperDriverInterface
 
     protected function getRequest(WebScraperExtract $scraper)
     {
-        return Http::withHeaders([])
+        return Http::withHeaders(['Content-Type' => 'application/json'])
             ->connectTimeout($scraper->getConnectTimeout())
             ->timeout($scraper->getRequestTimeout());
     }

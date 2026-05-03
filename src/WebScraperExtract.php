@@ -40,6 +40,7 @@ class WebScraperExtract extends AbstractWebScraper
     public function getRequestBody(): array
     {
         $defaultHeaders = $this->buildHeaders();
+        unset($defaultHeaders['Accept-Encoding']);
         $userHeaders = data_get($this->getOptions(), 'headers', []);
 
         return [
