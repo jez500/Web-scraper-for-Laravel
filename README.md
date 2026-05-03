@@ -6,6 +6,7 @@ A powerful and flexible Laravel package for scraping external web pages and extr
 
 * **HTTP Scraping**: Support for standard HTTP requests using Laravel's HTTP client
 * **API Scraping**: Support for scraping JavaScript-rendered pages (using [jez500/seleniumbase-scrapper](https://github.com/jez500/seleniumbase-scrapper))
+* **Extract Scraping**: Support for article extraction using [extract-docker](https://github.com/jez500/extract-docker) (Mercury Parser)
 * **Multiple Extraction Methods**: Extract data using CSS selectors, XPath expressions, regular expressions, or JSON dot notation
 * **Typed Schemas**: Support for type-safe scrape schemas via DTOs and `fromDto(...)`
 * **User Agent Rotation**: Built-in support for rotating user agents to avoid being blocked
@@ -22,6 +23,13 @@ For JavaScript-rendered page scraping, you'll also need to install:
 
 ```shell
 composer require jez500/seleniumbase-scrapper
+```
+
+For article extraction, you'll need to run the Extract service:
+
+```shell
+docker run -p 3000:3000 jez500/extract-docker
+# or use your own instance and set the URL via setExtractApiBaseUrl()
 ```
 
 ## Quick Start
@@ -148,6 +156,32 @@ $data = WebScraper::api()
     ->get()
     ->getSelector('[data-content]')
     ->first();
+```
+
+### Article Extraction
+
+Extract clean article content from web pages using Mercury Parser:
+
+```php
+// Extract article content
+$content = WebScraper::extract()
+    ->from('https://example.com/article')
+    ->get()
+    ->getBody();
+
+// With custom headers
+$content = WebScraper::extract()
+    ->from('https://example.com/article')
+    ->setOptions(['headers' => ['Accept-Language' => 'en-US']])
+    ->get()
+    ->getBody();
+
+// Use custom Extract API endpoint
+$content = WebScraper::extract()
+    ->setExtractApiBaseUrl('http://my-extract-service:3000')
+    ->from('https://example.com/article')
+    ->get()
+    ->getBody();
 ```
 
 ### Custom Drivers
