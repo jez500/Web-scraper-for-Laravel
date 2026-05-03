@@ -1,0 +1,16 @@
+{
+    "title": "Example Domain",
+    "content": "<!DOCTYPE html><html><head><title>Example Domain</title></head><body><div><h1>Example Domain</h1><p>This domain is for use in illustrative examples.</p><p><a href=\"https://www.iana.org/domains/example\">More information...</a></p></div></body></html>",
+    "author": null,
+    "date_published": null,
+    "lead_image_url": null,
+    "dek": null,
+    "next_page_url": null,
+    "url": "https://example.com/",
+    "domain": "example.com",
+    "excerpt": "This domain is for use in illustrative examples.",
+    "word_count": 12,
+    "direction": "ltr",
+    "total_pages": 1,
+    "rendered_pages": 1
+}
